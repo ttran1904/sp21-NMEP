@@ -9,6 +9,8 @@ import time
 import shutil
 import yaml
 from resnet import ResNet
+from averagemeter import AverageMeter
+from sklearn.metrics import accuracy_score
 
 parser = argparse.ArgumentParser(description='Configuration details for training/testing rotation net')
 parser.add_argument('--config', type=str, required=True)
@@ -24,20 +26,31 @@ config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
 
 def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
+    losses = AverageMeter()
+    top1 = AverageMeter()
+    
     for i, (input, target) in enumerate(train_loader):
     	# Use the usual pytorch implementation of training
 		input_var = torch.autograd.Variable(input)
         target_var = torch.autograd.Variable(target)
 		output = model(input_var)
   		loss = criterion(output, target_var)
+		
+		acc = accuracy_score(output, target_var)
+		losses.update(loss.data[0], input.size(0))
+  		top1.update(acc, input.size(0))
 
 		optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+    return top1.avg, losses.avg
      
 
 def validate(val_loader, model, criterion):
 	model.eval()
+ 	losses = AverageMeter()
+    top1 = AverageMeter()
+    
     for i, (input, target) in enumerate(val_loader):
     	# Implement the validation. Remember this is validation and not training
     	# so some things will be different.
@@ -45,6 +58,11 @@ def validate(val_loader, model, criterion):
         target_var = torch.autograd.Variable(target)
 		output = model(input_var)
         loss = criterion(output, target_var)
+        
+        acc = accuracy_score(output, target_var)
+		losses.update(loss.data[0], input.size(0))
+  		top1.update(acc, input.size(0))
+	return top1.avg, losses.avg
 
 def save_checkpoint(state, best_one, filename='rotationnetcheckpoint.pth.tar', filename2='rotationnetmodelbest.pth.tar'):
 	torch.save(state, filename)
@@ -74,8 +92,7 @@ def main():
 	for epoch in range(n_epochs):
 	 	 #TODO: make your loop which trains and validates. Use the train() func
             train(train_loader, model, criterion, optimizer, epoch)
-            predict = validate(val_loader, model, criterion)
-            
+            predict, val_loss = validate(val_loader, model, criterion)
 	 	 #TODO: Save your checkpoint
     		is_best = predict > best_predict
             best_predict = max(predict, best_predict)
