@@ -42,8 +42,7 @@ You will be writing code in the data.py, resnet.py, and rotnet.py.
 `data.py` will contain all your data loading functions.
 
 Once you have implemented the model, you can start training by running `main.py` with the following command:
-`python3 main.py 
-config config.yaml --train --data_dir ./data/cifar-10-batches-py/ --model_number 1`
+`python3 main.py config config.yaml --train --data_dir ./data/cifar-10-batches-py/ --model_number 1`
 
 `config.yaml` contains the configuration file with all the hyperparameters. If you have time, feel free to change these values and see how your model performs.
 

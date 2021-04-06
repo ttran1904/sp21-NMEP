@@ -28,45 +28,36 @@ def train(train_loader, model, criterion, optimizer, epoch):
     model.train()
     losses = AverageMeter()
     top1 = AverageMeter()
-    
     for i, (input, target) in enumerate(train_loader):
-    	# Use the usual pytorch implementation of training
-		input_var = torch.autograd.Variable(input)
-        target_var = torch.autograd.Variable(target)
-		output = model(input_var)
-  		loss = criterion(output, target_var)
-		
-		acc = accuracy_score(output, target_var)
-		losses.update(loss.data[0], input.size(0))
-  		top1.update(acc, input.size(0))
-
-		optimizer.zero_grad()
+        input_var = Variable(input)
+        target_var = Variable(target)
+        output = model(input_var)
+        loss = criterion(output, target_var)
+        acc = accuracy_score(output, target_var)
+        losses.update(loss.data[0], input.size(0))
+        top1.update(acc, input.size(0))
+        
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
     return top1.avg, losses.avg
-     
 
 def validate(val_loader, model, criterion):
-	model.eval()
- 	losses = AverageMeter()
+    model.eval()
+    losses = AverageMeter()
     top1 = AverageMeter()
-    
     for i, (input, target) in enumerate(val_loader):
-    	# Implement the validation. Remember this is validation and not training
-    	# so some things will be different.
-     	input_var = torch.autograd.Variable(input)
-        target_var = torch.autograd.Variable(target)
-		output = model(input_var)
+        input_var = Variable(input)
+        target_var = Variable(target)
+        output = model(input_var)
         loss = criterion(output, target_var)
-        
         acc = accuracy_score(output, target_var)
-		losses.update(loss.data[0], input.size(0))
-  		top1.update(acc, input.size(0))
-	return top1.avg, losses.avg
+        losses.update(loss.data[0], input.size(0))
+        top1.update(acc, input.size(0))
+    return top1.avg, losses.avg
 
 def save_checkpoint(state, best_one, filename='rotationnetcheckpoint.pth.tar', filename2='rotationnetmodelbest.pth.tar'):
-	torch.save(state, filename)
-	#best_one stores whether your current checkpoint is better than the previous checkpoint
+    torch.save(state, filename)
     if best_one:
         shutil.copyfile(filename, filename2)
 
@@ -75,33 +66,26 @@ def main():
 	model = ResNet()
 	criterion = nn.CrossEntropy()
 	optimizer = optim.Adam(model.parameters())
-    
-    transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    
-	train_dataset = Data(args[2])	# Come back to this later
-	train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
-                                            batch_size=4,
-                                            shuffle=True)
+	transform = transforms.Compose([transforms.ToTensor(), 
+                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+	train_dataset = Data(args[2])
+	train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=4, shuffle=True)
 	val_dataset = Data(args[2])
-	val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
-                                          	batch_size=4,
-                                            shuffle=True)
+	val_loader = torch.utils.data.DataLoader(dataset=val_dataset, batch_size=4, shuffle=True)
 	best_predict = 0
 	for epoch in range(n_epochs):
-	 	 #TODO: make your loop which trains and validates. Use the train() func
-            train(train_loader, model, criterion, optimizer, epoch)
-            predict, val_loss = validate(val_loader, model, criterion)
-	 	 #TODO: Save your checkpoint
-    		is_best = predict > best_predict
-            best_predict = max(predict, best_predict)
-			save_checkpoint({
-				'epoch': epoch + 1,
-				'state_dict': model.state_dict(),
-				'best_predict': best_predict,
-				'optimizer' : optimizer.state_dict(),
-        	}, is_best)
+		#TODO: make your loop which trains and validates. Use the train() func
+		train(train_loader, model, criterion, optimizer, epoch)
+		predict, val_loss = validate(val_loader, model, criterion)
+		#TODO: Save your checkpoint
+		is_best = predict > best_predict
+		best_predict = max(predict, best_predict)
+		save_checkpoint({
+			'epoch': epoch + 1,
+			'state_dict': model.state_dict(),
+			'best_predict': best_predict,
+			'optimizer' : optimizer.state_dict(),
+    	}, is_best)
     
 
 
